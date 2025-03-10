@@ -728,6 +728,46 @@ app.get('/admin', authMiddleware, (req, res) => {
                         from { transform: rotate(0deg); }
                         to { transform: rotate(360deg); }
                     }
+                    .status-info {
+                        font-size: 1.1em;
+                        color: #2c3e50;
+                        padding: 10px;
+                        border-radius: 6px;
+                        margin: 10px 0;
+                        display: flex;
+                        align-items: center;
+                    }
+                    .status-info .label {
+                        font-weight: bold;
+                        margin-right: 10px;
+                        min-width: 100px;
+                    }
+                    .status-info .value {
+                        font-family: monospace;
+                    }
+                    .time-display {
+                        background: #f8f9fa;
+                        padding: 8px 12px;
+                        border-radius: 4px;
+                        font-family: monospace;
+                        color: #2c3e50;
+                    }
+                    #statusMessage {
+                        display: inline-flex;
+                        align-items: center;
+                        padding: 8px 15px;
+                        border-radius: 6px;
+                        margin: 10px 0;
+                        font-weight: bold;
+                    }
+                    .status-yes { 
+                        color: #27ae60;
+                        background: rgba(39, 174, 96, 0.1);
+                    }
+                    .status-no { 
+                        color: #c32d2d;
+                        background: rgba(195, 45, 45, 0.1);
+                    }
                 </style>
             </head>
             <body>
@@ -748,10 +788,19 @@ app.get('/admin', authMiddleware, (req, res) => {
                             </div>
                             <div class="card-body">
                                 <div class="status-panel">
-                                    <p>当前时间：<span id="currentTime" class="time-display"></span></p>
-                                    <p class="info-text">Node版本：${process.version}</p>
-                                    <div id="statusMessage" class="${_status.isAvailable ? 'status-yes' : 'status-no'}">
-                                        当前状态: ${_status.message}
+                                    <div class="status-info">
+                                        <span class="label">当前时间：</span>
+                                        <span class="value" id="currentTime"></span>
+                                    </div>
+                                    <div class="status-info">
+                                        <span class="label">Node版本：</span>
+                                        <span class="value">${process.version}</span>
+                                    </div>
+                                    <div class="status-info">
+                                        <span class="label">运行状态：</span>
+                                        <span id="statusMessage" class="${_status.isAvailable ? 'status-yes' : 'status-no'}">
+                                            ${_status.message}
+                                        </span>
                                     </div>
                                     <div class="controls">
                                         <button class="btn btn-success" onclick="updateStatus(true)" id="enableBtn">
