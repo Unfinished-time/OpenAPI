@@ -12,7 +12,7 @@ class PluginManager {
     loadRoutes(pluginDir, app) {
         try {
             if (!fs.existsSync(pluginDir)) {
-                console.log('~ [PlugManager] 插件目录不存在，正在创建...');
+                console.log('~ [PluginManager] 插件目录不存在，正在创建...');
                 fs.mkdirSync(pluginDir, { recursive: true });
                 return;
             }
@@ -26,7 +26,7 @@ class PluginManager {
                 }
             });
         } catch (error) {
-            console.error('~ [PlugManager] 加载插件时出错:', error);
+            console.error('~ [PluginManager] 加载插件时出错:', error);
         }
     }
 
@@ -75,7 +75,7 @@ class PluginManager {
                         router.use('/', subRouter);
                         app.use('/', router);
                         this.routes.set(pluginName, subRouter);
-                        console.log(`~ [PlugManager] 已加载旧版插件: ${pluginName}`);
+                        console.log(`~ [PluginManager] 已加载旧版插件: ${pluginName}`);
                     } else if (typeof plugin.route === 'function') {
                         // 新版格式：使用route方法
                         const subRouter = express.Router();
@@ -84,7 +84,7 @@ class PluginManager {
                             router.use('/', subRouter);
                             app.use('/', router);
                             this.routes.set(pluginName, subRouter);
-                            console.log(`~ [PlugManager] 已加载新版插件: ${pluginName}`);
+                            console.log(`~ [PluginManager] 已加载新版插件: ${pluginName}`);
                         } catch (err) {
                             throw new Error(`插件 ${pluginName} 的route方法执行失败: ${err.message}`);
                         }
@@ -97,12 +97,12 @@ class PluginManager {
                         this._routeStacks.set(pluginName, router.stack);
                     }
                 } catch (routeError) {
-                    console.error(`~ [PlugManager] 注册路由时出错: ${routeError.message}`);
+                    console.error(`~ [PluginManager] 注册路由时出错: ${routeError.message}`);
                     throw routeError;
                 }
             }
         } catch (error) {
-            console.error(`~ [PlugManager] 加载插件 ${path.basename(pluginPath)} 时出错:`, error);
+            console.error(`~ [PluginManager] 加载插件 ${path.basename(pluginPath)} 时出错:`, error);
             // 确保出错时清理相关状态
             this.removePluginRoutes(app, path.basename(pluginPath));
         }
@@ -122,9 +122,9 @@ class PluginManager {
             
             this._routeStacks.delete(pluginName);
             this.routes.delete(pluginName);
-            console.log(`~ [PlugManager] 已移除插件路由: ${pluginName}`);
+            console.log(`~ [PluginManager] 已移除插件路由: ${pluginName}`);
         } catch (error) {
-            console.error(`~ [PlugManager] 移除插件路由时出错:`, error);
+            console.error(`~ [PluginManager] 移除插件路由时出错:`, error);
         }
     }
 
@@ -133,19 +133,19 @@ class PluginManager {
         try {
             // 如果插件之前已加载，先移除旧路由
             if (this.routes.has(pluginName)) {
-                console.log(`~ [PlugManager] 正在重新加载插件: ${pluginName}`);
+                console.log(`~ [PluginManager] 正在重新加载插件: ${pluginName}`);
             }
             
             this.loadPlugin(filePath, app);
         } catch (error) {
-            console.error(`~ [PlugManager] 重新加载插件 ${pluginName} 时出错:`, error);
+            console.error(`~ [PluginManager] 重新加载插件 ${pluginName} 时出错:`, error);
         }
     }
 
     setPluginState(name, enabled) {
         const plugin = this.plugins.get(name);
         if (!plugin) {
-            console.error(`~ [PlugManager] 未找到插件: ${name}`);
+            console.error(`~ [PluginManager] 未找到插件: ${name}`);
             return null;
         }
 
@@ -158,7 +158,7 @@ class PluginManager {
             this.removePluginRoutes(require('../index.js').app, name);
         }
         
-        console.log(`~ [PlugManager] 插件 ${name} ${enabled ? '已启用' : '已停用'}`);
+        console.log(`~ [PluginManager] 插件 ${name} ${enabled ? '已启用' : '已停用'}`);
         
         return {
             name: plugin.name,
