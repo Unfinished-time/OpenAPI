@@ -910,7 +910,7 @@ app.get('/admin', authMiddleware, (req, res) => {
 
                             if (data.success) {
                                 const statusMsg = document.getElementById('statusMessage');
-                                statusMsg.textContent = '当前状态: ' + (data.status.message || '未知状态');
+                                statusMsg.textContent = '' + (data.status.message || '未知状态');
                                 statusMsg.className = data.status.isAvailable ? 'status-yes' : 'status-no';
                                 showToast(state ? '服务已成功启用' : '服务已成功停用', 'success');
                                 
