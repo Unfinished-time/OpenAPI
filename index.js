@@ -62,9 +62,16 @@ app.use(session({
 
 // 修改服务状态检查中间件
 app.use((req, res, next) => {
-    // 允许访问登录页面、管理页面和主页
-    if (req.path === '/' || req.path === '/login' || req.path === '/admin' || req.path.startsWith('/status/')) {
+    // 允许访问登录页面和主页，以及已登录用户的管理页面和状态控制
+    if (req.path === '/' || 
+        req.path === '/login' || 
+        (req.session.isLoggedIn && (req.path === '/admin' || req.path.startsWith('/status/')))) {
         return next();
+    }
+    
+    // 如果是未登录用户访问 /admin 或 /status，重定向到登录页
+    if (req.path === '/admin' || req.path.startsWith('/status/')) {
+        return res.redirect('/login');
     }
     
     // 检查服务状态
@@ -787,18 +794,18 @@ app.get('/admin', authMiddleware, (req, res) => {
                     // 状态更新函数
                     async function updateStatus(state) {
                         const enableBtn = document.getElementById('enableBtn');
-                        const disableBtn = document.getElementKeyById('disableBtn');
+                        const disableBtn = document.getElementById('disableBtn'); // aaa拼写错误
                         const loading = state ? 
                             document.getElementById('enableLoading') : 
                             document.getElementById('disableLoading');
                         try {
-                            // 禁用按钮，显示加载动画
+                            // 禁用按钮的加载动画
                             enableBtn.disabled = true;
                             disableBtn.disabled = true;
                             loading.style.display = 'inline-block';
 
                             const response = await fetch('/status/' + state);
-                            // 验证响应是否为JSON
+                            // 验证响应是否为JSON格式的
                             const contentType = response.headers.get('content-type');
                             if (!contentType || !contentType.includes('application/json')) {
                                 throw new Error('服务器返回的不是JSON格式数据');
@@ -817,6 +824,7 @@ app.get('/admin', authMiddleware, (req, res) => {
                                 statusMsg.className = data.status.isAvailable ? 'status-yes' : 'status-no';
                                 showToast(state ? '服务已成功启用' : '服务已成功停用', 'success');
                                 
+                                // 困死啦啊啊啊啊
                                 // 添加最小加载时间，确保动画效果明显
                                 await new Promise(resolve => setTimeout(resolve, 1500));
                             } else {
@@ -835,7 +843,7 @@ app.get('/admin', authMiddleware, (req, res) => {
                             // 错误情况下也保持加载动画一段时间
                             await new Promise(resolve => setTimeout(resolve, 600));
                         } finally {
-                            // 添加渐变过渡效果
+                            // 渐变过渡效果
                             loading.style.opacity = '0';
                             await new Promise(resolve => setTimeout(resolve, 200));
                             loading.style.display = 'none';
@@ -849,7 +857,7 @@ app.get('/admin', authMiddleware, (req, res) => {
                         }
                     }
 
-                    // 修改插件开关功能
+                    // 插件开关功能
                     async function togglePlugin(name, enabled) {
                         try {
                             const response = await fetch('/status/plugin/' + name + '/' + enabled);
@@ -896,7 +904,15 @@ app.get('/admin', authMiddleware, (req, res) => {
 });
 
 // 状态管理路由
-app.get('/status/:state', authMiddleware, (req, res) => {
+app.get('/status/:state', (req, res) => {
+    // 如果用户未登录，返回 401 错误
+    if (!req.session.isLoggedIn) {
+        return res.status(401).json({
+            success: false,
+            message: '未授权的访问'
+        });
+    }
+    
     const newState = req.params.state.toLowerCase() === 'true';
     global._status.isAvailable = newState;
     global._status.lastCheck = new Date().toISOString();
@@ -910,7 +926,15 @@ app.get('/status/:state', authMiddleware, (req, res) => {
     });
 });
 
-app.get('/status/plugin/:name/:state', authMiddleware, (req, res) => {
+app.get('/status/plugin/:name/:state', (req, res) => {
+    // 如果用户未登录，返回 401 错误
+    if (!req.session.isLoggedIn) {
+        return res.status(401).json({
+            success: false,
+            message: '未授权的访问'
+        });
+    }
+    
     const { name, state } = req.params;
     const enabled = state.toLowerCase() === 'true';
     
@@ -1024,11 +1048,11 @@ const watcher = chokidar.watch(path.join(__dirname, '/apis'), {
 
 watcher
     .on('add', (filePath) => {
-        console.log(`~ [PlugManager] 侦测到文件添加: ${filePath}`);
+        console.log(`~ [PluginManager] 侦测到文件添加: ${filePath}`);
         pluginManager.loadRoutes(path.join(__dirname, '/apis'), app);
     })
     .on('change', (filePath) => {
-        console.log(`~ [PlugManager] 侦测到文件更改: ${filePath}`);
+        console.log(`~ [PluginManager] 侦测到文件更改: ${filePath}`);
         pluginManager.reloadRoute(filePath, app);
     });
 
