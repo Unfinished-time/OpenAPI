@@ -506,7 +506,6 @@ app.get('/logout', (req, res) => {
 
 // 修改管理面板路由，添加验证中间件
 app.get('/admin', authMiddleware, (req, res) => {
-    // 获取插件列表
     const plugins = pluginManager.getPlugins();
     
     res.send(`
@@ -516,17 +515,108 @@ app.get('/admin', authMiddleware, (req, res) => {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>管理面板 - iCat OpenAPI</title>
                 <style>
-                    body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-                    .container { max-width: 800px; margin: 0 auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                    h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-                    .status-panel { margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 4px; }
+                    body { 
+                        font-family: "Microsoft YaHei", Arial, sans-serif; 
+                        margin: 0; 
+                        padding: 0; 
+                        background: #f5f5f5; 
+                    }
+                    .navbar {
+                        background: #2c3e50;
+                        color: white;
+                        padding: 1rem;
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        z-index: 1000;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    }
+                    .navbar-brand {
+                        font-size: 1.5em;
+                        font-weight: bold;
+                        color: white;
+                        text-decoration: none;
+                    }
+                    .navbar-nav {
+                        display: flex;
+                        align-items: center;
+                        gap: 20px;
+                    }
+                    .nav-link {
+                        color: #ecf0f1;
+                        text-decoration: none;
+                        padding: 8px 15px;
+                        border-radius: 4px;
+                        transition: all 0.3s ease;
+                    }
+                    .nav-link:hover {
+                        background: rgba(255,255,255,0.1);
+                    }
+                    .nav-link.logout {
+                        background: #c0392b;
+                    }
+                    .nav-link.logout:hover {
+                        background: #e74c3c;
+                    }
+                    .main-content {
+                        margin-top: 80px;
+                        padding: 20px;
+                    }
+                    .container { 
+                        max-width: 1200px; 
+                        margin: 0 auto; 
+                        padding: 20px;
+                    }
+                    .card {
+                        background: #fff;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        margin-bottom: 20px;
+                        overflow: hidden;
+                    }
+                    .card-header {
+                        background: #f8f9fa;
+                        padding: 15px 20px;
+                        border-bottom: 1px solid #eee;
+                    }
+                    .card-body {
+                        padding: 20px;
+                    }
+                    .status-panel { 
+                        margin: 20px 0; 
+                        padding: 20px;
+                    }
                     .status-yes { color: #27ae60; }
                     .status-no { color: #c32d2d; }
-                    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
-                    .btn-success { background: #27ae60; color: white; }
-                    .btn-danger { background: #c32d2d; color: white; }
-                    #statusMessage { font-weight: bold; margin: 10px 0; }
-                    .info-text { color: #666; margin: 5px 0; }
+                    .btn { 
+                        padding: 10px 20px; 
+                        border: none; 
+                        border-radius: 4px; 
+                        cursor: pointer; 
+                        margin: 5px;
+                        transition: all 0.3s ease;
+                    }
+                    .btn:hover {
+                        transform: translateY(-1px);
+                    }
+                    .btn-success { 
+                        background: #27ae60; 
+                        color: white;
+                    }
+                    .btn-success:hover {
+                        background: #2ecc71;
+                    }
+                    .btn-danger { 
+                        background: #c32d2d; 
+                        color: white;
+                    }
+                    .btn-danger:hover {
+                        background: #e74c3c;
+                    }
                     .time-display {
                         background: #fff;
                         padding: 10px;
@@ -539,10 +629,6 @@ app.get('/admin', authMiddleware, (req, res) => {
                         margin-left: 10px;
                         animation: rotate 1s linear infinite;
                     }
-                    @keyframes rotate {
-                        from { transform: rotate(0deg); }
-                        to { transform: rotate(360deg); }
-                    }
                     .toast {
                         position: fixed;
                         top: 20px;
@@ -553,44 +639,51 @@ app.get('/admin', authMiddleware, (req, res) => {
                         font-weight: bold;
                         display: none;
                         opacity: 0;
-                        transition: opacity 0.8s ease;
+                        transition: opacity 0.3s ease;
+                        z-index: 1001;
                     }
                     .toast.success { background-color: #27ae60; }
                     .toast.error { background-color: #c32d2d; }
-                    .controls { margin: 15px 0; }
-                    .btn:disabled {
-                        opacity: 0.6;
-                        cursor: not-allowed;
-                    }
-                    /* 添加插件列表样式 */
                     .plugin-list {
-                        margin-top: 30px;
-                        background: #fff;
-                        padding: 20px;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        margin-top: 20px;
                     }
                     .plugin-item {
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        padding: 15px;
+                        padding: 20px;
                         border-bottom: 1px solid #eee;
+                        transition: background-color 0.3s;
                     }
-                    .plugin-item:last-child {
-                        border-bottom: none;
+                    .plugin-item:hover {
+                        background-color: #f8f9fa;
                     }
                     .plugin-info {
                         flex: 1;
                     }
                     .plugin-name {
+                        font-size: 1.1em;
                         font-weight: bold;
                         color: #2c3e50;
+                        margin-bottom: 5px;
                     }
-                    .plugin-path {
-                        font-size: 0.9em;
+                    .plugin-type {
+                        font-size: 0.8em;
                         color: #666;
-                        margin-top: 5px;
+                    }
+                    .plugin-status {
+                        font-size: 0.9em;
+                        padding: 5px 10px;
+                        border-radius: 15px;
+                        margin-right: 15px;
+                    }
+                    .plugin-status.enabled {
+                        color: #27ae60;
+                        background: rgba(39, 174, 96, 0.1);
+                    }
+                    .plugin-status.disabled {
+                        color: #c0392b;
+                        background: rgba(192, 57, 43, 0.1);
                     }
                     .switch {
                         position: relative;
@@ -631,136 +724,84 @@ app.get('/admin', authMiddleware, (req, res) => {
                     input:checked + .slider:before {
                         transform: translateX(26px);
                     }
-                    .plugin-status {
-                        font-size: 0.9em;
-                        margin-right: 15px;
-                    }
-                    .plugin-status.enabled { color: #27ae60; }
-                    .plugin-status.disabled { color: #c32d2d; }
-                    /* 更新插件列表样式 */
-                    .plugin-list {
-                        margin-top: 30px;
-                        background: #fff;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    }
-                    .plugin-list h2 {
-                        padding: 20px;
-                        margin: 0;
-                        border-bottom: 1px solid #eee;
-                    }
-                    .plugin-item {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        padding: 20px;
-                        border-bottom: 1px solid #eee;
-                        transition: background-color 0.3s;
-                    }
-                    .plugin-item:hover {
-                        background-color: #f8f9fa;
-                    }
-                    .plugin-item:last-child {
-                        border-bottom: none;
-                    }
-                    .plugin-info {
-                        flex: 1;
-                    }
-                    .plugin-name {
-                        font-size: 1.1em;
-                        font-weight: bold;
-                        color: #2c3e50;
-                        margin-bottom: 5px;
-                    }
-                    .plugin-type {
-                        font-size: 0.8em;
-                        color: #666;
-                        font-weight: normal;
-                    }
-                    .plugin-description {
-                        color: #666;
-                        margin: 5px 0;
-                        font-size: 0.9em;
-                    }
-                    .plugin-details {
-                        margin-top: 8px;
-                        font-size: 0.85em;
-                        color: #888;
-                    }
-                    .detail-item {
-                        margin-right: 15px;
-                    }
-                    .plugin-controls {
-                        display: flex;
-                        align-items: center;
-                        gap: 15px;
-                    }
-                    .plugin-status {
-                        font-size: 0.9em;
-                        padding: 5px 10px;
-                        border-radius: 15px;
-                        white-space: nowrap;
-                    }
-                    .plugin-status.enabled {
-                        color: #27ae60;
-                        background: rgba(39, 174, 96, 0.1);
-                    }
-                    .plugin-status.disabled {
-                        color: #c0392b;
-                        background: rgba(192, 57, 43, 0.1);
+                    @keyframes rotate {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
                     }
                 </style>
             </head>
             <body>
-                <div class="container">
-                    <h1>iCat OpenAPI 管理面板</h1>
-                    <div class="status-panel">
-                        <h2>系统信息</h2>
-                        <p>当前时间：<span id="currentTime" class="time-display"></span></p>
-                        <p class="info-text">Node版本：${process.version}</p>
-                        <h2>服务状态控制</h2>
-                        <div id="statusMessage" class="${_status.isAvailable ? 'status-yes' : 'status-no'}">
-                            当前状态: ${_status.message}
-                        </div>
-                        <div class="controls">
-                            <button class="btn btn-success" onclick="updateStatus(true)" id="enableBtn">
-                                启用服务
-                                <span class="loading" id="enableLoading">⚪</span>
-                            </button>
-                            <button class="btn btn-danger" onclick="updateStatus(false)" id="disableBtn">
-                                停用服务
-                                <span class="loading" id="disableLoading">⚪</span>
-                            </button>
-                        </div>
+                <nav class="navbar">
+                    <a href="/admin" class="navbar-brand">iCat OpenAPI 管理面板</a>
+                    <div class="navbar-nav">
+                        <a href="/" class="nav-link" target="_blank">访问首页</a>
+                        <a href="/logout" class="nav-link logout">退出登录</a>
                     </div>
-                    <!-- 添加插件列表部分 -->
-                    <div class="plugin-list">
-                        <h2>插件管理</h2>
-                        ${plugins.map(plugin => `
-                            <div class="plugin-item" data-plugin-name="${plugin.name}">
-                                <div class="plugin-info">
-                                    <div class="plugin-name">${plugin.name} 
-                                        <span class="plugin-type">[${plugin.category}]</span>
+                </nav>
+                
+                <div class="main-content">
+                    <div class="container">
+                        <!-- 系统状态 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 style="margin:0">系统状态</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="status-panel">
+                                    <p>当前时间：<span id="currentTime" class="time-display"></span></p>
+                                    <p class="info-text">Node版本：${process.version}</p>
+                                    <div id="statusMessage" class="${_status.isAvailable ? 'status-yes' : 'status-no'}">
+                                        当前状态: ${_status.message}
                                     </div>
-                                    <div class="plugin-description">${plugin.description}</div>
-                                    <div class="plugin-details">
-                                        <span class="detail-item">版本: ${plugin.version}</span>
-                                        <span class="detail-item">路径: ${plugin.path}</span>
+                                    <div class="controls">
+                                        <button class="btn btn-success" onclick="updateStatus(true)" id="enableBtn">
+                                            启用服务
+                                            <span class="loading" id="enableLoading">⚪</span>
+                                        </button>
+                                        <button class="btn btn-danger" onclick="updateStatus(false)" id="disableBtn">
+                                            停用服务
+                                            <span class="loading" id="disableLoading">⚪</span>
+                                        </button>
                                     </div>
-                                </div>
-                                <div class="plugin-controls">
-                                    <span class="plugin-status ${plugin.enabled ? 'enabled' : 'disabled'}">
-                                        ${plugin.enabled ? '● 运行中' : '○ 已停用'}
-                                    </span>
-                                    <label class="switch" title="${plugin.enabled ? '点击停用插件' : '点击启用插件'}">
-                                        <input type="checkbox" 
-                                               ${plugin.enabled ? 'checked' : ''} 
-                                               onchange="togglePlugin('${plugin.name}', this.checked)">
-                                        <span class="slider"></span>
-                                    </label>
                                 </div>
                             </div>
-                        `).join('')}
+                        </div>
+
+                        <!-- 插件管理的那部分 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 style="margin:0">插件管理</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="plugin-list">
+                                    ${plugins.map(plugin => `
+                                        <div class="plugin-item" data-plugin-name="${plugin.name}">
+                                            <div class="plugin-info">
+                                                <div class="plugin-name">${plugin.name} 
+                                                    <span class="plugin-type">[${plugin.category}]</span>
+                                                </div>
+                                                <div class="plugin-description">${plugin.description}</div>
+                                                <div class="plugin-details">
+                                                    <span class="detail-item">版本: ${plugin.version}</span>
+                                                    <span class="detail-item">路径: ${plugin.path}</span>
+                                                </div>
+                                            </div>
+                                            <div class="plugin-controls">
+                                                <span class="plugin-status ${plugin.enabled ? 'enabled' : 'disabled'}">
+                                                    ${plugin.enabled ? '● 运行中' : '○ 已停用'}
+                                                </span>
+                                                <label class="switch" title="${plugin.enabled ? '点击停用插件' : '点击启用插件'}">
+                                                    <input type="checkbox" 
+                                                           ${plugin.enabled ? 'checked' : ''} 
+                                                           onchange="togglePlugin('${plugin.name}', this.checked)">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="toast" class="toast"></div>
@@ -903,7 +944,7 @@ app.get('/admin', authMiddleware, (req, res) => {
     `);
 });
 
-// 状态管理路由
+// 状态管理路由（没事别动）
 app.get('/status/:state', (req, res) => {
     // 如果用户未登录，返回 401 错误
     if (!req.session.isLoggedIn) {
