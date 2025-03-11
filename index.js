@@ -768,6 +768,30 @@ app.get('/admin', authMiddleware, (req, res) => {
                         color: #c32d2d;
                         background: rgba(195, 45, 45, 0.1);
                     }
+                    .plugin-controls {
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        height: 34px; /* 与开关按钮高度一致 */
+                    }
+                    .plugin-status {
+                        display: inline-flex;
+                        align-items: center;
+                        height: 34px; 
+                        padding: 0 15px;
+                        border-radius: 17px;
+                        margin-right: 15px;
+                        font-size: 0.9em;
+                        line-height: 1;
+                    }
+                    .plugin-status.enabled {
+                        color: #27ae60;
+                        background: rgba(39, 174, 96, 0.1);
+                    }
+                    .plugin-status.disabled {
+                        color: #c0392b;
+                        background: rgba(192, 57, 43, 0.1);
+                    }
                 </style>
             </head>
             <body>
