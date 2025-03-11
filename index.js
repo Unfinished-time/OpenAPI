@@ -23,6 +23,13 @@ global._status = {
     message: "服务运行正常"
 };
 
+// 在全局变量区域添加公告配置
+global._announcement = {
+    content: "",
+    isEnabled: false,
+    lastUpdate: new Date().toISOString()
+};
+
 global._config = ini.parse(fs.readFileSync(configPath, 'utf-8'));
 
 const port = _config.app.port;
@@ -394,11 +401,30 @@ app.get('/', (req, res) => {
                     .github-link:hover {
                         background: #1a1e22;
                     }
+                    .announcement {
+                        background: #fff3cd;
+                        color: #856404;
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin: 20px 0;
+                        display: ${global._announcement.isEnabled ? 'block' : 'none'};
+                        border: 1px solid #ffeeba;
+                    }
+                    .announcement-icon {
+                        margin-right: 10px;
+                    }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <h1>iCat OpenAPI</h1>
+                    
+                    <!-- 添加公告展示区域 -->
+                    <div class="announcement">
+                        <span class="announcement-icon">📢</span>
+                        ${global._announcement.content}
+                    </div>
+
                     <div class="info">
                         <p>欢迎使用 iCat OpenAPI</p>
                         <div class="status-box ${_status.isAvailable ? 'status-yes' : 'status-no'}">
@@ -792,6 +818,25 @@ app.get('/admin', authMiddleware, (req, res) => {
                         color: #c0392b;
                         background: rgba(192, 57, 43, 0.1);
                     }
+                    .announcement-panel {
+                        margin-top: 20px;
+                    }
+                    .announcement-controls {
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        margin-top: 15px;
+                    }
+                    .announcement-textarea {
+                        width: 100%;
+                        min-height: 100px;
+                        padding: 10px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        font-family: inherit;
+                        margin-bottom: 10px;
+                        resize: vertical;
+                    }
                 </style>
             </head>
             <body>
@@ -805,6 +850,34 @@ app.get('/admin', authMiddleware, (req, res) => {
                 
                 <div class="main-content">
                     <div class="container">
+                        <!-- 添加公告管理卡片 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 style="margin:0">公告管理</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="announcement-panel">
+                                    <textarea 
+                                        id="announcementContent" 
+                                        class="announcement-textarea" 
+                                        placeholder="在此输入公告内容..."
+                                    >${global._announcement.content}</textarea>
+                                    <div class="announcement-controls">
+                                        <label class="switch" title="启用/停用公告">
+                                            <input type="checkbox" 
+                                                   id="announcementToggle"
+                                                   ${global._announcement.isEnabled ? 'checked' : ''} 
+                                                   onchange="toggleAnnouncement(this.checked)">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <button class="btn btn-success" onclick="updateAnnouncement()">
+                                            保存公告
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- 系统状态 -->
                         <div class="card">
                             <div class="card-header">
@@ -1011,6 +1084,40 @@ app.get('/admin', authMiddleware, (req, res) => {
                             }
                         }
                     }
+
+                    // 添加公告管理功能
+                    async function updateAnnouncement() {
+                        const content = document.getElementById('announcementContent').value;
+                        const isEnabled = document.getElementById('announcementToggle').checked;
+                        
+                        try {
+                            const response = await fetch('/status/announcement', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ content, isEnabled })
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error('HTTP error! status: ' + response.status);
+                            }
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                showToast('公告更新成功', 'success');
+                            } else {
+                                throw new Error(data.message || '操作失败');
+                            }
+                        } catch (err) {
+                            showToast('公告更新失败: ' + err.message, 'error');
+                            console.error('公告更新错误:', err);
+                        }
+                    }
+
+                    function toggleAnnouncement(enabled) {
+                        updateAnnouncement();
+                    }
                 </script>
             </body>
         </html>
@@ -1079,6 +1186,28 @@ app.get('/status/plugin/:name/:state', (req, res) => {
             message: err.message || '更新插件状态时发生错误'
         });
     }
+});
+
+app.post('/status/announcement', express.json(), (req, res) => {
+    if (!req.session.isLoggedIn) {
+        return res.status(401).json({
+            success: false,
+            message: '未授权的访问'
+        });
+    }
+    
+    const { content, isEnabled } = req.body;
+    global._announcement = {
+        content: content || "",
+        isEnabled: isEnabled,
+        lastUpdate: new Date().toISOString()
+    };
+    
+    console.log(`~ [公告管理] 公告已${isEnabled ? '启用' : '停用'}`);
+    res.json({
+        success: true,
+        announcement: global._announcement
+    });
 });
 
 app.get('/404', (req, res) => {
