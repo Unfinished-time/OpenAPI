@@ -485,25 +485,83 @@ app.get('/login', (req, res) => {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>登录管理面板 - iCat OpenAPI</title>
                 <style>
-                    body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-                    .container { max-width: 400px; margin: 0 auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                    h1 { color: #2c3e50; text-align: center; }
-                    .form-group { margin-bottom: 15px; }
-                    input { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; }
-                    button { width: 100%; padding: 10px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-                    .error { color: red; text-align: center; }
+                    body { 
+                        font-family: "Microsoft YaHei", Arial, sans-serif; 
+                        margin: 0;
+                        padding: 0;
+                        min-height: 100vh;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                    }
+                    .container { 
+                        max-width: 400px;
+                        width: 90%;
+                        padding: 30px;
+                        background: rgba(255, 255, 255, 0.95);
+                        border-radius: 15px;
+                        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+                        backdrop-filter: blur(10px);
+                        transition: transform 0.3s ease;
+                    }
+                    .container:hover {
+                        transform: translateY(-5px);
+                    }
+                    h1 { 
+                        color: #2c3e50;
+                        text-align: center;
+                        margin-bottom: 30px;
+                        font-size: 1.8em;
+                    }
+                    .form-group { 
+                        margin-bottom: 20px; 
+                    }
+                    label {
+                        display: block;
+                        margin-bottom: 8px;
+                        color: #34495e;
+                    }
+                    input { 
+                        width: 100%;
+                        padding: 12px;
+                        border: 1px solid #ddd;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        transition: all 0.3s ease;
+                    }
+                    input:focus {
+                        outline: none;
+                        border-color: #3498db;
+                        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+                    }
+                    button { 
+                        width: 100%;
+                        padding: 12px;
+                        background: #2c3e50;
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 16px;
+                        transition: all 0.3s ease;
+                    }
+                    button:hover {
+                        background: #34495e;
+                        transform: translateY(-2px);
+                    }
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <h1>欢迎使用管理面板</h1>
+                    <h1>iCat OpenAPI 管理面板</h1>
                     <form action="/login" method="POST">
                         <div class="form-group">
-                            <label>用户名：</label>
-                            <input type="text" name="username" required>
+                            <label>用户名</label>
+                            <input type="text" name="username" required autocomplete="off">
                         </div>
                         <div class="form-group">
-                            <label>密码：</label>
+                            <label>密码</label>
                             <input type="password" name="password" required>
                         </div>
                         <button type="submit">登录</button>
@@ -545,10 +603,12 @@ app.get('/admin', authMiddleware, (req, res) => {
                         font-family: "Microsoft YaHei", Arial, sans-serif; 
                         margin: 0; 
                         padding: 0; 
-                        background: #f5f5f5; 
+                        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                        min-height: 100vh;
                     }
                     .navbar {
-                        background: #2c3e50;
+                        background: rgba(44, 62, 80, 0.95);
+                        backdrop-filter: blur(10px);
                         color: white;
                         padding: 1rem;
                         position: fixed;
@@ -559,7 +619,7 @@ app.get('/admin', authMiddleware, (req, res) => {
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
                     }
                     .navbar-brand {
                         font-size: 1.5em;
@@ -598,16 +658,21 @@ app.get('/admin', authMiddleware, (req, res) => {
                         padding: 20px;
                     }
                     .card {
-                        background: #fff;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        margin-bottom: 20px;
+                        background: rgba(255, 255, 255, 0.95);
+                        backdrop-filter: blur(10px);
+                        border-radius: 15px;
+                        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+                        margin-bottom: 25px;
                         overflow: hidden;
+                        transition: transform 0.3s ease;
+                    }
+                    .card:hover {
+                        transform: translateY(-5px);
                     }
                     .card-header {
-                        background: #f8f9fa;
-                        padding: 15px 20px;
-                        border-bottom: 1px solid #eee;
+                        background: rgba(248, 249, 250, 0.9);
+                        padding: 20px;
+                        border-bottom: 1px solid rgba(0,0,0,0.1);
                     }
                     .card-body {
                         padding: 20px;
@@ -619,15 +684,17 @@ app.get('/admin', authMiddleware, (req, res) => {
                     .status-yes { color: #27ae60; }
                     .status-no { color: #c32d2d; }
                     .btn { 
-                        padding: 10px 20px; 
+                        padding: 12px 25px; 
+                        font-size: 16px;
                         border: none; 
-                        border-radius: 4px; 
+                        border-radius: 8px; 
                         cursor: pointer; 
                         margin: 5px;
                         transition: all 0.3s ease;
                     }
                     .btn:hover {
-                        transform: translateY(-1px);
+                        transform: translateY(-2px);
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
                     }
                     .btn-success { 
                         background: #27ae60; 
@@ -830,12 +897,19 @@ app.get('/admin', authMiddleware, (req, res) => {
                     .announcement-textarea {
                         width: 100%;
                         min-height: 100px;
-                        padding: 10px;
+                        padding: 15px;
                         border: 1px solid #ddd;
-                        border-radius: 4px;
+                        border-radius: 8px;
                         font-family: inherit;
-                        margin-bottom: 10px;
+                        font-size: 16px;
+                        margin-bottom: 15px;
                         resize: vertical;
+                        transition: all 0.3s ease;
+                    }
+                    .announcement-textarea:focus {
+                        outline: none;
+                        border-color: #3498db;
+                        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
                     }
                 </style>
             </head>
