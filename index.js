@@ -30,6 +30,43 @@ global._announcement = {
     lastUpdate: new Date().toISOString()
 };
 
+// 修改全局外观配置
+global._appearance = {
+    enabled: false,
+    icon: "/favicon.ico",
+    background: "",
+    pages: {
+        home: {
+            background: "",
+            primaryColor: "#2c3e50",
+            textColor: "#333333",
+            cardBackground: "rgba(255, 255, 255, 0.95)",
+            accentColor: "#3498db"
+        },
+        login: {
+            background: "",
+            primaryColor: "#2c3e50",
+            textColor: "#333333",
+            cardBackground: "rgba(255, 255, 255, 0.95)",
+            buttonColor: "#2c3e50"
+        },
+        admin: {
+            background: "",
+            navbarColor: "rgba(44, 62, 80, 0.95)",
+            primaryColor: "#27ae60",
+            cardBackground: "rgba(255, 255, 255, 0.95)",
+            textColor: "#2c3e50"
+        },
+        error: {
+            background: "#f5f5f5",
+            textColor: "#333333",
+            cardBackground: "white",
+            buttonColor: "#3498db"
+        }
+    },
+    lastUpdate: new Date().toISOString()
+};
+
 global._config = ini.parse(fs.readFileSync(configPath, 'utf-8'));
 
 const port = _config.app.port;
@@ -599,6 +636,19 @@ app.get('/admin', authMiddleware, (req, res) => {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>管理面板 - iCat OpenAPI</title>
                 <style>
+                    ${global._appearance.enabled ? `
+                        body { 
+                            background-image: url('${global._appearance.pages.admin.background}');
+                            background-size: cover;
+                            background-attachment: fixed;
+                        }
+                        .navbar {
+                            background: ${global._appearance.pages.admin.navbarColor}e6 !important;
+                        }
+                        .btn-success {
+                            background: ${global._appearance.pages.admin.primaryColor} !important;
+                        }
+                    ` : ''}
                     body { 
                         font-family: "Microsoft YaHei", Arial, sans-serif; 
                         margin: 0; 
@@ -911,6 +961,54 @@ app.get('/admin', authMiddleware, (req, res) => {
                         border-color: #3498db;
                         box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
                     }
+                    .appearance-panel {
+                        margin-top: 20px;
+                    }
+                    .color-picker {
+                        width: 100%;
+                        padding: 10px;
+                        border: 1px solid #ddd;
+                        border-radius: 8px;
+                    }
+                    .preview-icon {
+                        width: 32px;
+                        height: 32px;
+                        object-fit: contain;
+                        margin-left: 10px;
+                    }
+                    .section-title {
+                        font-size: 1.1em;
+                        font-weight: bold;
+                        margin: 20px 0 10px;
+                        padding-bottom: 5px;
+                        border-bottom: 2px solid #eee;
+                    }
+                    .color-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        gap: 15px;
+                        margin: 15px 0;
+                    }
+                    .color-item {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 5px;
+                    }
+                    .color-input {
+                        width: 100%;
+                        padding: 8px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        font-family: monospace;
+                    }
+                    .color-picker {
+                        width: 100%;
+                        height: 40px;
+                        padding: 5px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    }
                 </style>
             </head>
             <body>
@@ -1019,6 +1117,158 @@ app.get('/admin', authMiddleware, (req, res) => {
                                             </div>
                                         </div>
                                     `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 添加外观设置卡片 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 style="margin:0">外观设置</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="appearance-panel">
+                                    <div class="form-group">
+                                        <label>网站图标URL: <small>(建议使用绝对路径，如 /favicon.ico)</small></label>
+                                        <div style="display:flex;align-items:center;">
+                                            <input type="text" id="iconUrl" class="announcement-textarea" 
+                                                   value="${global._appearance.icon}" style="margin-bottom:0">
+                                            <img src="${global._appearance.icon}" class="preview-icon" id="iconPreview"
+                                                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><rect width=%2232%22 height=%2232%22 fill=%22%23ddd%22/><text x=%2250%%22 y=%2250%%22 dy=%22.35em%22 fill=%22%23666%22 text-anchor=%22middle%22>?</text></svg>'">
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-top:15px;">
+                                        <label>全局背景图片URL: <small>(建议使用绝对路径)</small></label>
+                                        <input type="text" id="backgroundUrl" class="announcement-textarea" 
+                                               value="${global._appearance.background}">
+                                    </div>
+
+                                    <!-- 主页设置 -->
+                                    <div class="section-title">主页设置</div>
+                                    <div class="color-grid">
+                                        <div class="color-item">
+                                            <label>背景</label>
+                                            <input type="text" class="color-input" id="homeBackground" 
+                                                   value="${global._appearance.pages.home.background}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>主色调</label>
+                                            <input type="color" class="color-picker" id="homePrimary" 
+                                                   value="${global._appearance.pages.home.primaryColor}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>文字颜色</label>
+                                            <input type="color" class="color-picker" id="homeText" 
+                                                   value="${global._appearance.pages.home.textColor}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>卡片背景</label>
+                                            <input type="text" class="color-input" id="homeCard" 
+                                                   value="${global._appearance.pages.home.cardBackground}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>强调色</label>
+                                            <input type="color" class="color-picker" id="homeAccent" 
+                                                   value="${global._appearance.pages.home.accentColor}">
+                                        </div>
+                                    </div>
+
+                                    <!-- 登录页设置 -->
+                                    <div class="section-title">登录页设置</div>
+                                    <div class="color-grid">
+                                        <div class="color-item">
+                                            <label>背景</label>
+                                            <input type="text" class="color-input" id="loginBackground" 
+                                                   value="${global._appearance.pages.login.background}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>主色调</label>
+                                            <input type="color" class="color-picker" id="loginPrimary" 
+                                                   value="${global._appearance.pages.login.primaryColor}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>文字颜色</label>
+                                            <input type="color" class="color-picker" id="loginText" 
+                                                   value="${global._appearance.pages.login.textColor}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>卡片背景</label>
+                                            <input type="text" class="color-input" id="loginCard" 
+                                                   value="${global._appearance.pages.login.cardBackground}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>按钮颜色</label>
+                                            <input type="color" class="color-picker" id="loginButton" 
+                                                   value="${global._appearance.pages.login.buttonColor}">
+                                        </div>
+                                    </div>
+
+                                    <!-- 管理页设置 -->
+                                    <div class="section-title">管理页设置</div>
+                                    <div class="color-grid">
+                                        <div class="color-item">
+                                            <label>背景</label>
+                                            <input type="text" class="color-input" id="adminBackground" 
+                                                   value="${global._appearance.pages.admin.background}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>导航栏颜色</label>
+                                            <input type="color" class="color-picker" id="adminNavbar" 
+                                                   value="${global._appearance.pages.admin.navbarColor}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>主色调</label>
+                                            <input type="color" class="color-picker" id="adminPrimary" 
+                                                   value="${global._appearance.pages.admin.primaryColor}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>卡片背景</label>
+                                            <input type="text" class="color-input" id="adminCard" 
+                                                   value="${global._appearance.pages.admin.cardBackground}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>文字颜色</label>
+                                            <input type="color" class="color-picker" id="adminText" 
+                                                   value="${global._appearance.pages.admin.textColor}">
+                                        </div>
+                                    </div>
+
+                                    <!-- 错误页设置 -->
+                                    <div class="section-title">错误页设置</div>
+                                    <div class="color-grid">
+                                        <div class="color-item">
+                                            <label>背景</label>
+                                            <input type="text" class="color-input" id="errorBackground" 
+                                                   value="${global._appearance.pages.error.background}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>文字颜色</label>
+                                            <input type="color" class="color-picker" id="errorText" 
+                                                   value="${global._appearance.pages.error.textColor}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>卡片背景</label>
+                                            <input type="text" class="color-input" id="errorCard" 
+                                                   value="${global._appearance.pages.error.cardBackground}">
+                                        </div>
+                                        <div class="color-item">
+                                            <label>按钮颜色</label>
+                                            <input type="color" class="color-picker" id="errorButton" 
+                                                   value="${global._appearance.pages.error.buttonColor}">
+                                        </div>
+                                    </div>
+
+                                    <div class="announcement-controls">
+                                        <label class="switch" title="启用/停用自定义外观">
+                                            <input type="checkbox" id="appearanceToggle"
+                                                   ${global._appearance.enabled ? 'checked' : ''} 
+                                                   onchange="toggleAppearance(this.checked)">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <button class="btn btn-success" onclick="updateAppearance()">
+                                            保存设置
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1192,6 +1442,100 @@ app.get('/admin', authMiddleware, (req, res) => {
                     function toggleAnnouncement(enabled) {
                         updateAnnouncement();
                     }
+
+                    // 添加外观设置相关函数
+                    async function updateAppearance() {
+                        const appearance = {
+                            enabled: document.getElementById('appearanceToggle').checked,
+                            icon: document.getElementById('iconUrl').value,
+                            background: document.getElementById('backgroundUrl').value,
+                            pages: {
+                                home: {
+                                    background: document.getElementById('homeBackground').value,
+                                    primaryColor: document.getElementById('homePrimary').value,
+                                    textColor: document.getElementById('homeText').value,
+                                    cardBackground: document.getElementById('homeCard').value,
+                                    accentColor: document.getElementById('homeAccent').value
+                                },
+                                login: {
+                                    background: document.getElementById('loginBackground').value,
+                                    primaryColor: document.getElementById('loginPrimary').value,
+                                    textColor: document.getElementById('loginText').value,
+                                    cardBackground: document.getElementById('loginCard').value,
+                                    buttonColor: document.getElementById('loginButton').value
+                                },
+                                admin: {
+                                    background: document.getElementById('adminBackground').value,
+                                    navbarColor: document.getElementById('adminNavbar').value,
+                                    primaryColor: document.getElementById('adminPrimary').value,
+                                    cardBackground: document.getElementById('adminCard').value,
+                                    textColor: document.getElementById('adminText').value
+                                },
+                                error: {
+                                    background: document.getElementById('errorBackground').value,
+                                    textColor: document.getElementById('errorText').value,
+                                    cardBackground: document.getElementById('errorCard').value,
+                                    buttonColor: document.getElementById('errorButton').value
+                                }
+                            }
+                        };
+
+                        try {
+                            const response = await fetch('/status/appearance', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(appearance)
+                            });
+
+                            if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                showToast('外观设置已更新', 'success');
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                throw new Error(data.message || '操作失败');
+                            }
+                        } catch (err) {
+                            showToast('更新失败: ' + err.message, 'error');
+                        }
+                    }
+
+                    function toggleAppearance(enabled) {
+                        updateAppearance();
+                    }
+                    
+                    // 添加图标预览功能
+                    let iconPreviewTimeout;
+                    document.getElementById('iconUrl').addEventListener('input', function() {
+                        // 清除之前的定时器
+                        if (iconPreviewTimeout) {
+                            clearTimeout(iconPreviewTimeout);
+                        }
+                        
+                        // 设置新的定时器，只有用户停止输入500ms后才更新预览
+                        iconPreviewTimeout = setTimeout(() => {
+                            const preview = document.getElementById('iconPreview');
+                            // 如果URL为空，显示占位图标
+                            if (!this.value) {
+                                preview.src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><rect width=%2232%22 height=%2232%22 fill=%22%23ddd%22/><text x=%2250%%22 y=%2250%%22 dy=%22.35em%22 fill=%22%23666%22 text-anchor=%22middle%22>?</text></svg>';
+                            } else {
+                                preview.src = this.value;
+                            }
+                        }, 500);
+                    });
+
+                    // 添加实时预览功能
+                    document.querySelectorAll('.color-picker, .color-input').forEach(input => {
+                        input.addEventListener('input', function() {
+                            // 实现实时预览效果
+                            previewAppearance();
+                        });
+                    });
+
+                    function previewAppearance() {
+                        // 实现实时预览逻辑
+                    }
                 </script>
             </body>
         </html>
@@ -1281,6 +1625,30 @@ app.post('/status/announcement', express.json(), (req, res) => {
     res.json({
         success: true,
         announcement: global._announcement
+    });
+});
+
+app.post('/status/appearance', express.json(), (req, res) => {
+    if (!req.session.isLoggedIn) {
+        return res.status(401).json({
+            success: false,
+            message: '未授权的访问'
+        });
+    }
+    
+    const { icon, background, pages, enabled } = req.body;
+    global._appearance = {
+        icon: icon || "/favicon.ico",
+        background: background || "",
+        pages: pages || global._appearance.pages,
+        enabled: enabled,
+        lastUpdate: new Date().toISOString()
+    };
+    
+    console.log(`~ [外观管理] 外观设置已${enabled ? '启用' : '停用'}`);
+    res.json({
+        success: true,
+        appearance: global._appearance
     });
 });
 
