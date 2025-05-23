@@ -79,7 +79,7 @@ var format = '= :remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:htt
 
 // 添加一个自定义中间件来计算响应时间
 const responseTimeLogger = (req, res, next) => {
-    const startTime = Date.now(); // 记录请求开始时间
+    const startTime = Date.now();
 
     res.on('finish', () => {
         const endTime = Date.now(); // 记录请求结束时间
@@ -99,7 +99,7 @@ app.use(express.static('public'));
 
 // 添加 session 中间件
 app.use(session({
-    secret: 'icat-admin-secret',
+    secret: 'openapi-admin-secret',
     resave: false,
     saveUninitialized: true,
 }));
@@ -125,7 +125,7 @@ app.use((req, res, next) => {
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>服务暂时不可用 - iCat OpenAPI</title>
+                    <title>服务暂时不可用 - OpenAPI</title>
                     <style>
                         body {
                             font-family: "Microsoft YaHei", Arial, sans-serif;
@@ -209,7 +209,7 @@ app.use((req, res, next) => {
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>插件已停用 - iCat OpenAPI</title>
+                    <title>插件已停用 - OpenAPI</title>
                     <style>
                         body {
                             font-family: "Microsoft YaHei", Arial, sans-serif;
@@ -299,7 +299,7 @@ const authMiddleware = (req, res, next) => {
 
 let date = new Date()
 
-console.log('欢迎使用 iCat OpenAPI 服务核心.\n启动时间：' + date.toISOString() + ' | Node版本:' + process.version + '\n~ 正在启动服务，请稍等...');
+console.log('欢迎使用 OpenAPI 服务核心.\n启动时间：' + date.toISOString() + ' | Node版本:' + process.version + '\n~ 正在启动服务，请稍等...');
 if (_config.app.debug) {
     console.log('[DEBUG] 已启用 Debug 模式，将会输出更多日志。')
 }
@@ -313,7 +313,7 @@ app.get('/', (req, res) => {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>iCat OpenAPI</title>
+                <title>OpenAPI</title>
                 <style>
                     body { 
                         font-family: "Microsoft YaHei", Arial, sans-serif; 
@@ -454,7 +454,7 @@ app.get('/', (req, res) => {
             </head>
             <body>
                 <div class="container">
-                    <h1>iCat OpenAPI</h1>
+                    <h1>OpenAPI</h1>
                     
                     <!-- 添加公告展示区域 -->
                     <div class="announcement">
@@ -463,7 +463,7 @@ app.get('/', (req, res) => {
                     </div>
 
                     <div class="info">
-                        <p>欢迎使用 iCat OpenAPI</p>
+                        <p>欢迎使用 OpenAPI</p>
                         <div class="status-box ${_status.isAvailable ? 'status-yes' : 'status-no'}">
                             <div class="status-indicator"></div>
                             <span>服务状态：${_status.message}</span>
@@ -520,7 +520,7 @@ app.get('/login', (req, res) => {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>登录管理面板 - iCat OpenAPI</title>
+                <title>登录管理面板 - OpenAPI</title>
                 <style>
                     body { 
                         font-family: "Microsoft YaHei", Arial, sans-serif; 
@@ -591,7 +591,7 @@ app.get('/login', (req, res) => {
             </head>
             <body>
                 <div class="container">
-                    <h1>iCat OpenAPI 管理面板</h1>
+                    <h1>OpenAPI 管理面板</h1>
                     <form action="/login" method="POST">
                         <div class="form-group">
                             <label>用户名</label>
@@ -634,7 +634,7 @@ app.get('/admin', authMiddleware, (req, res) => {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>管理面板 - iCat OpenAPI</title>
+                <title>管理面板 - OpenAPI</title>
                 <style>
                     ${global._appearance.enabled ? `
                         body { 
@@ -1013,7 +1013,7 @@ app.get('/admin', authMiddleware, (req, res) => {
             </head>
             <body>
                 <nav class="navbar">
-                    <a href="/admin" class="navbar-brand">iCat OpenAPI 管理面板</a>
+                    <a href="/admin" class="navbar-brand">OpenAPI 管理面板</a>
                     <div class="navbar-nav">
                         <a href="/" class="nav-link" target="_blank">访问首页</a>
                         <a href="/logout" class="nav-link logout">退出登录</a>
@@ -1658,7 +1658,7 @@ app.get('/404', (req, res) => {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>404 页面未找到 - iCat OpenAPI</title>
+                <title>404 页面未找到 - OpenAPI</title>
                 <style>
                     body {
                         font-family: "Microsoft YaHei", Arial, sans-serif;
