@@ -7,6 +7,8 @@ class PluginManager {
         this.plugins = new Map();
         this.routes = new Map();
         this._routeStacks = new Map();
+        this._loadingPlugins = new Set(); // 添加加载状态追踪
+        this._debounceTimers = new Map(); // 添加防抖计时器存储
     }
 
     loadRoutes(pluginDir, app) {
@@ -32,16 +34,13 @@ class PluginManager {
 
     loadPlugin(pluginPath, app) {
         try {
-            // 清除缓存以确保重新加载最新版本
             delete require.cache[require.resolve(pluginPath)];
             const plugin = require(pluginPath);
             
             const pluginName = path.basename(pluginPath, '.js');
             
-            // 先移除旧路由（如果存在）
             this.removePluginRoutes(app, pluginName);
 
-            // 存储插件信息
             this.plugins.set(pluginName, {
                 name: pluginName,
                 path: pluginPath,
@@ -53,15 +52,12 @@ class PluginManager {
                 author: plugin.plugin_info?.author || '未知'
             });
 
-            // 如果插件已启用，处理路由
             if (this.plugins.get(pluginName).enabled) {
                 const router = express.Router();
                 
                 try {
                     if (typeof plugin === 'function') {
-                        // 旧版格式：将函数包装为路由处理器
                         const handler = plugin;
-                        // 创建一个专用的子路由来处理请求
                         const subRouter = express.Router();
                         subRouter.all('*', (req, res, next) => {
                             try {
@@ -71,13 +67,11 @@ class PluginManager {
                             }
                         });
                         
-                        // 将子路由挂载到主路由
                         router.use('/', subRouter);
                         app.use('/', router);
                         this.routes.set(pluginName, subRouter);
                         console.log(`~ [PluginManager] 已加载旧版插件: ${pluginName}`);
                     } else if (typeof plugin.route === 'function') {
-                        // 新版格式：使用route方法
                         const subRouter = express.Router();
                         try {
                             plugin.route(subRouter);
@@ -92,7 +86,6 @@ class PluginManager {
                         throw new Error(`插件 ${pluginName} 未提供有效的路由处理函数`);
                     }
 
-                    // 保存路由堆栈引用
                     if (router.stack && router.stack.length > 0) {
                         this._routeStacks.set(pluginName, router.stack);
                     }
@@ -103,7 +96,6 @@ class PluginManager {
             }
         } catch (error) {
             console.error(`~ [PluginManager] 加载插件 ${path.basename(pluginPath)} 时出错:`, error);
-            // 确保出错时清理相关状态
             this.removePluginRoutes(app, path.basename(pluginPath));
         }
     }
@@ -111,7 +103,6 @@ class PluginManager {
     removePluginRoutes(app, pluginName) {
         try {
             if (app && app._router && app._router.stack) {
-                // 查找并移除特定插件的路由
                 app._router.stack = app._router.stack.filter(layer => {
                     const keepLayer = !(layer.name === pluginName || 
                         (layer.regexp && layer.regexp.toString().includes(pluginName)) ||
@@ -131,7 +122,6 @@ class PluginManager {
     reloadRoute(filePath, app) {
         const pluginName = path.basename(filePath, '.js');
         try {
-            // 如果插件之前已加载，先移除旧路由
             if (this.routes.has(pluginName)) {
                 console.log(`~ [PluginManager] 正在重新加载插件: ${pluginName}`);
             }
@@ -151,7 +141,6 @@ class PluginManager {
 
         plugin.enabled = enabled;
         
-        // 重新加载插件以应用新状态
         if (enabled) {
             this.loadPlugin(plugin.path, require('../index.js').app);
         } else {
@@ -181,70 +170,95 @@ class PluginManager {
         }));
     }
 
-    // 添加 getPluginByPath 方法
     getPluginByPath(requestPath) {
-        // 规范化请求路径
         requestPath = requestPath.toLowerCase();
         if (!requestPath.startsWith('/')) {
             requestPath = '/' + requestPath;
         }
 
-        // 查找匹配的插件
         return Array.from(this.plugins.values()).find(plugin => {
-            // 使用插件名称作为基础路径
             const pluginBasePath = '/' + plugin.name.toLowerCase();
-            
-            // 检查请求路径是否以插件名称开头
             return requestPath.startsWith(pluginBasePath + '/') || 
                    requestPath === pluginBasePath;
         });
     }
 
+    // 添加防抖函数
+    _debounce(key, fn, delay = 500) {
+        if (this._debounceTimers.has(key)) {
+            clearTimeout(this._debounceTimers.get(key));
+        }
+        const timer = setTimeout(() => {
+            fn();
+            this._debounceTimers.delete(key);
+        }, delay);
+        this._debounceTimers.set(key, timer);
+    }
+
     setupWatcher(pluginDir, app) {
         const chokidar = require('chokidar');
         
-        // 创建文件监听器
         const watcher = chokidar.watch(pluginDir, {
-            ignored: /(^|[\/\\])\../, // 忽略隐藏文件
+            ignored: [/(^|[\/\\])\../, /node_modules/],
             persistent: true,
-            ignoreInitial: true
+            ignoreInitial: true,
+            awaitWriteFinish: {
+                stabilityThreshold: 1000,
+                pollInterval: 100
+            },
+            ignorePermissionErrors: true
         });
 
-        // 监听文件变化
-        watcher.on('change', (filepath) => {
-            if (filepath.endsWith('.js')) {
-                console.log(`~ [PluginManager] 检测到插件文件变化: ${filepath}`);
-                try {
-                    this.loadPlugin(filepath, app);
-                    console.log(`~ [PluginManager] 插件热重载成功: ${path.basename(filepath)}`);
-                } catch (error) {
-                    console.error(`~ [PluginManager] 插件热重载失败: ${error.message}`);
-                }
+        const handlePluginChange = (filepath) => {
+            if (!filepath.endsWith('.js')) return;
+            
+            const pluginName = path.basename(filepath, '.js');
+            
+            // 防止重复加载
+            if (this._loadingPlugins.has(pluginName)) {
+                console.log(`~ [PluginManager] 插件 ${pluginName} 正在加载中，跳过重复加载`);
+                return;
             }
-        });
 
-        // 监听新增文件
-        watcher.on('add', (filepath) => {
-            if (filepath.endsWith('.js')) {
-                console.log(`~ [PluginManager] 检测到新插件文件: ${filepath}`);
-                try {
-                    this.loadPlugin(filepath, app);
-                    console.log(`~ [PluginManager] 新插件加载成功: ${path.basename(filepath)}`);
-                } catch (error) {
-                    console.error(`~ [PluginManager] 新插件加载失败: ${error.message}`);
-                }
-            }
-        });
-
-        // 监听文件删除
-        watcher.on('unlink', (filepath) => {
-            if (filepath.endsWith('.js')) {
-                const pluginName = path.basename(filepath, '.js');
-                console.log(`~ [PluginManager] 检测到插件文件删除: ${filepath}`);
+            this._loadingPlugins.add(pluginName);
+            
+            try {
+                console.log(`~ [PluginManager] 正在重新加载插件: ${filepath}`);
+                this.loadPlugin(filepath, app);
+                console.log(`~ [PluginManager] 插件 ${pluginName} 重载成功`);
+            } catch (error) {
+                console.error(`~ [PluginManager] 插件 ${pluginName} 重载失败:`, error);
+                // 重载失败时清理相关状态
                 this.removePluginRoutes(app, pluginName);
                 this.plugins.delete(pluginName);
-                console.log(`~ [PluginManager] 已移除插件: ${pluginName}`);
+            } finally {
+                this._loadingPlugins.delete(pluginName);
             }
+        };
+
+        watcher
+            .on('change', (filepath) => {
+                this._debounce(filepath, () => handlePluginChange(filepath));
+            })
+            .on('add', (filepath) => {
+                this._debounce(filepath, () => handlePluginChange(filepath));
+            })
+            .on('unlink', (filepath) => {
+                if (filepath.endsWith('.js')) {
+                    const pluginName = path.basename(filepath, '.js');
+                    console.log(`~ [PluginManager] 检测到插件被删除: ${filepath}`);
+                    this.removePluginRoutes(app, pluginName);
+                    this.plugins.delete(pluginName);
+                    console.log(`~ [PluginManager] 已移除插件: ${pluginName}`);
+                }
+            })
+            .on('error', error => {
+                console.error('~ [PluginManager] 文件监控错误:', error);
+            });
+
+        process.on('SIGINT', () => {
+            watcher.close();
+            console.log('~ [PluginManager] 已关闭插件监控');
         });
 
         console.log('~ [PluginManager] 已启用插件热重载功能');

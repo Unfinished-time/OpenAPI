@@ -4,37 +4,27 @@ const path = require('path');
 const morgan = require('morgan');
 const app = express();
 const ini = require('ini');
-const chokidar = require('chokidar');
 const pluginManager = require('./core/pluginManager');
 const session = require('express-session');
-
 const configPath = './config.ini';
 const PLUGIN_DIR = path.join(__dirname, 'apis');
-
-// 检查配置文件是否存在
 if (!fs.existsSync(configPath)) {
     console.log('未检测到配置文件，正在创建...');
     require('./core/gen_config');
 }
-
-// 初始化插件管理器并开启热加载
 const pluginWatcher = pluginManager.setupWatcher(PLUGIN_DIR, app);
-
-// 初始化服务状态
 global._status = {
     isAvailable: true,
     lastCheck: new Date().toISOString(),
     message: "服务运行正常"
 };
 
-// 在全局变量区域添加公告配置
 global._announcement = {
     content: "",
     isEnabled: false,
     lastUpdate: new Date().toISOString()
 };
 
-// 修改全局外观配置
 global._appearance = {
     enabled: false,
     icon: "/favicon.ico",
@@ -81,48 +71,39 @@ morgan.token('remote-addr', function (req) {
 
 var format = '= :remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] :referrer';
 
-// 添加一个自定义中间件来计算响应时间
 const responseTimeLogger = (req, res, next) => {
     const startTime = Date.now();
 
     res.on('finish', () => {
-        const endTime = Date.now(); // 记录请求结束时间
-        const elapsedTime = endTime - startTime; // 计算响应时间
-        console.log(`~ [中间件] 请求响应时间: ${elapsedTime}ms`); // 输出响应时间到console
+        const endTime = Date.now();
+        const elapsedTime = endTime - startTime;
+        console.log(`~ [中间件] 请求响应时间: ${elapsedTime}ms`);
     });
 
     next();
 };
 
-// 响应时间
 app.use(responseTimeLogger);
-// 输出请求日志
 app.use(morgan(format));
-// 载入静态资源
 app.use(express.static('public'));
 
-// 添加 session 中间件
 app.use(session({
     secret: 'openapi-admin-secret',
     resave: false,
     saveUninitialized: true,
 }));
 
-// 修改服务状态检查中间件
 app.use((req, res, next) => {
-    // 允许访问登录页面和主页，以及已登录用户的管理页面和状态控制
     if (req.path === '/' || 
         req.path === '/login' || 
         (req.session.isLoggedIn && (req.path === '/admin' || req.path.startsWith('/status/')))) {
         return next();
     }
     
-    // 如果是未登录用户访问 /admin 或 /status，重定向到登录页
     if (req.path === '/admin' || req.path.startsWith('/status/')) {
         return res.redirect('/login');
     }
     
-    // 检查服务状态
     if (!global._status.isAvailable) {
         return res.status(503).send(`
             <html>
@@ -205,7 +186,6 @@ app.use((req, res, next) => {
         `);
     }
 
-    // 检查请求的插件状态
     const requestedPlugin = pluginManager.getPluginByPath(req.path);
     if (requestedPlugin && !requestedPlugin.enabled) {
         return res.status(403).send(`
@@ -292,7 +272,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// 添加登录验证中间件
 const authMiddleware = (req, res, next) => {
     if (req.session.isLoggedIn) {
         next();
@@ -308,7 +287,6 @@ if (_config.app.debug) {
     console.log('[DEBUG] 已启用 Debug 模式，将会输出更多日志。')
 }
 
-// 先定义基本路由
 app.get('/', (req, res) => {
     let date = new Date();
     var currentYear = date.getFullYear();
@@ -460,7 +438,6 @@ app.get('/', (req, res) => {
                 <div class="container">
                     <h1>OpenAPI</h1>
                     
-                    <!-- 添加公告展示区域 -->
                     <div class="announcement">
                         <span class="announcement-icon">📢</span>
                         ${global._announcement.content}
@@ -615,7 +592,6 @@ app.get('/login', (req, res) => {
 
 app.post('/login', express.urlencoded({ extended: true }), (req, res) => {
     const { username, password } = req.body;
-    // 这里使用配置文件中的管理员账号密码
     if (username === _config.admin.username && password === _config.admin.password) {
         req.session.isLoggedIn = true;
         res.redirect('/admin');
@@ -629,7 +605,6 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 
-// 修改管理面板路由，添加验证中间件
 app.get('/admin', authMiddleware, (req, res) => {
     const plugins = pluginManager.getPlugins();
     
@@ -936,7 +911,7 @@ app.get('/admin', authMiddleware, (req, res) => {
                         background: rgba(39, 174, 96, 0.1);
                     }
                     .plugin-status.disabled {
-                        color: #c0392b;
+                        color: #c32d2d;
                         background: rgba(192, 57, 43, 0.1);
                     }
                     .announcement-panel {
@@ -1340,7 +1315,6 @@ app.get('/admin', authMiddleware, (req, res) => {
                                 showToast(state ? '服务已成功启用' : '服务已成功停用', 'success');
                                 
                                 // 困死啦啊啊啊啊
-                                // 添加最小加载时间，确保动画效果明显
                                 await new Promise(resolve => setTimeout(resolve, 1500));
                             } else {
                                 throw new Error(data.message || '操作失败');
@@ -1546,9 +1520,7 @@ app.get('/admin', authMiddleware, (req, res) => {
     `);
 });
 
-// 状态管理路由（没事别动）
 app.get('/status/:state', (req, res) => {
-    // 如果用户未登录，返回 401 错误
     if (!req.session.isLoggedIn) {
         return res.status(401).json({
             success: false,
@@ -1570,7 +1542,6 @@ app.get('/status/:state', (req, res) => {
 });
 
 app.get('/status/plugin/:name/:state', (req, res) => {
-    // 如果用户未登录，返回 401 错误
     if (!req.session.isLoggedIn) {
         return res.status(401).json({
             success: false,
@@ -1727,25 +1698,12 @@ app.get('/404', (req, res) => {
     `);
 });
 
-// 加载所有API模块
 pluginManager.loadRoutes(path.join(__dirname, '/apis'), app);
 
-// 修改文件监听部分的代码
-const watcher = chokidar.watch(path.join(__dirname, '/apis'), {
-    ignoreInitial: true
-});
+// 初始化插件热更新
+pluginManager.setupWatcher(path.join(__dirname, '/apis'), app);
 
-watcher
-    .on('add', (filePath) => {
-        console.log(`~ [PluginManager] 侦测到文件添加: ${filePath}`);
-        pluginManager.loadRoutes(path.join(__dirname, '/apis'), app);
-    })
-    .on('change', (filePath) => {
-        console.log(`~ [PluginManager] 侦测到文件更改: ${filePath}`);
-        pluginManager.reloadRoute(filePath, app);
-    });
-
-// 处理所有未匹配的路由 - 放在所有路由定义之后，app.listen之前
+// 处理所有未匹配的路由
 app.use((req, res) => {
     res.redirect('/404');
 });
@@ -1754,5 +1712,4 @@ app.listen(port, () => {
     console.log(`* 服务运行在端口: ${port}`);
 });
 
-// 在文件开头附近添加导出
 module.exports = { app };
