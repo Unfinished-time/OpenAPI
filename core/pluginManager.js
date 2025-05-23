@@ -199,6 +199,57 @@ class PluginManager {
                    requestPath === pluginBasePath;
         });
     }
+
+    setupWatcher(pluginDir, app) {
+        const chokidar = require('chokidar');
+        
+        // 创建文件监听器
+        const watcher = chokidar.watch(pluginDir, {
+            ignored: /(^|[\/\\])\../, // 忽略隐藏文件
+            persistent: true,
+            ignoreInitial: true
+        });
+
+        // 监听文件变化
+        watcher.on('change', (filepath) => {
+            if (filepath.endsWith('.js')) {
+                console.log(`~ [PluginManager] 检测到插件文件变化: ${filepath}`);
+                try {
+                    this.loadPlugin(filepath, app);
+                    console.log(`~ [PluginManager] 插件热重载成功: ${path.basename(filepath)}`);
+                } catch (error) {
+                    console.error(`~ [PluginManager] 插件热重载失败: ${error.message}`);
+                }
+            }
+        });
+
+        // 监听新增文件
+        watcher.on('add', (filepath) => {
+            if (filepath.endsWith('.js')) {
+                console.log(`~ [PluginManager] 检测到新插件文件: ${filepath}`);
+                try {
+                    this.loadPlugin(filepath, app);
+                    console.log(`~ [PluginManager] 新插件加载成功: ${path.basename(filepath)}`);
+                } catch (error) {
+                    console.error(`~ [PluginManager] 新插件加载失败: ${error.message}`);
+                }
+            }
+        });
+
+        // 监听文件删除
+        watcher.on('unlink', (filepath) => {
+            if (filepath.endsWith('.js')) {
+                const pluginName = path.basename(filepath, '.js');
+                console.log(`~ [PluginManager] 检测到插件文件删除: ${filepath}`);
+                this.removePluginRoutes(app, pluginName);
+                this.plugins.delete(pluginName);
+                console.log(`~ [PluginManager] 已移除插件: ${pluginName}`);
+            }
+        });
+
+        console.log('~ [PluginManager] 已启用插件热重载功能');
+        return watcher;
+    }
 }
 
 module.exports = new PluginManager();

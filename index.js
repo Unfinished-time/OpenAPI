@@ -9,12 +9,16 @@ const pluginManager = require('./core/pluginManager');
 const session = require('express-session');
 
 const configPath = './config.ini';
+const PLUGIN_DIR = path.join(__dirname, 'apis');
 
 // 检查配置文件是否存在
 if (!fs.existsSync(configPath)) {
     console.log('未检测到配置文件，正在创建...');
     require('./core/gen_config');
 }
+
+// 初始化插件管理器并开启热加载
+const pluginWatcher = pluginManager.setupWatcher(PLUGIN_DIR, app);
 
 // 初始化服务状态
 global._status = {
