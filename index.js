@@ -18,13 +18,11 @@ global._status = {
     lastCheck: new Date().toISOString(),
     message: "服务运行正常"
 };
-
 global._announcement = {
     content: "",
     isEnabled: false,
     lastUpdate: new Date().toISOString()
 };
-
 global._appearance = {
     enabled: false,
     icon: "/favicon.ico",
@@ -60,20 +58,12 @@ global._appearance = {
     },
     lastUpdate: new Date().toISOString()
 };
-
 global._config = ini.parse(fs.readFileSync(configPath, 'utf-8'));
-
 const port = _config.app.port;
-
-morgan.token('remote-addr', function (req) {
-    return req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-});
-
+morgan.token('remote-addr',function (req){return req.headers['x-forwarded-for']||req.connection.remoteAddress;});
 var format = '= :remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] :referrer';
-
 const responseTimeLogger = (req, res, next) => {
     const startTime = Date.now();
-
     res.on('finish', () => {
         const endTime = Date.now();
         const elapsedTime = endTime - startTime;
@@ -82,28 +72,21 @@ const responseTimeLogger = (req, res, next) => {
 
     next();
 };
-
 app.use(responseTimeLogger);
 app.use(morgan(format));
 app.use(express.static('public'));
-
 app.use(session({
-    secret: 'openapi-admin-secret',
+    secret: 'lNdzs91S5SxqPnuVYZGxN3lf6WVDI7g9lA6awUqnK5dJNprQgLHQXdRDJc3zGtcw',
     resave: false,
     saveUninitialized: true,
 }));
-
 app.use((req, res, next) => {
     if (req.path === '/' || 
         req.path === '/login' || 
         (req.session.isLoggedIn && (req.path === '/admin' || req.path.startsWith('/status/')))) {
         return next();
     }
-    
-    if (req.path === '/admin' || req.path.startsWith('/status/')) {
-        return res.redirect('/login');
-    }
-    
+    if (req.path === '/admin' || req.path.startsWith('/status/')) return res.redirect('/login');
     if (!global._status.isAvailable) {
         return res.status(503).send(`
             <html>
@@ -185,7 +168,6 @@ app.use((req, res, next) => {
             </html>
         `);
     }
-
     const requestedPlugin = pluginManager.getPluginByPath(req.path);
     if (requestedPlugin && !requestedPlugin.enabled) {
         return res.status(403).send(`
@@ -268,10 +250,8 @@ app.use((req, res, next) => {
             </html>
         `);
     }
-
     next();
 });
-
 const authMiddleware = (req, res, next) => {
     if (req.session.isLoggedIn) {
         next();
