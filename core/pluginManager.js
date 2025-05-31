@@ -197,69 +197,86 @@ class PluginManager {
 
     setupWatcher(pluginDir, app) {
         const chokidar = require('chokidar');
+        let watcher = null;
         
-        const watcher = chokidar.watch(pluginDir, {
-            ignored: [/(^|[\/\\])\../, /node_modules/],
-            persistent: true,
-            ignoreInitial: true,
-            awaitWriteFinish: {
-                stabilityThreshold: 1000,
-                pollInterval: 100
-            },
-            ignorePermissionErrors: true
-        });
-
-        const handlePluginChange = (filepath) => {
-            if (!filepath.endsWith('.js')) return;
-            
-            const pluginName = path.basename(filepath, '.js');
-            
-            // 防止重复加载
-            if (this._loadingPlugins.has(pluginName)) {
-                console.log(`~ [PluginManager] 插件 ${pluginName} 正在加载中，跳过重复加载`);
-                return;
-            }
-
-            this._loadingPlugins.add(pluginName);
-            
-            try {
-                console.log(`~ [PluginManager] 正在重新加载插件: ${filepath}`);
-                this.loadPlugin(filepath, app);
-                console.log(`~ [PluginManager] 插件 ${pluginName} 重载成功`);
-            } catch (error) {
-                console.error(`~ [PluginManager] 插件 ${pluginName} 重载失败:`, error);
-                // 重载失败时清理相关状态
-                this.removePluginRoutes(app, pluginName);
-                this.plugins.delete(pluginName);
-            } finally {
-                this._loadingPlugins.delete(pluginName);
-            }
-        };
-
-        watcher
-            .on('change', (filepath) => {
-                this._debounce(filepath, () => handlePluginChange(filepath));
-            })
-            .on('add', (filepath) => {
-                this._debounce(filepath, () => handlePluginChange(filepath));
-            })
-            .on('unlink', (filepath) => {
-                if (filepath.endsWith('.js')) {
-                    const pluginName = path.basename(filepath, '.js');
-                    console.log(`~ [PluginManager] 检测到插件被删除: ${filepath}`);
-                    this.removePluginRoutes(app, pluginName);
-                    this.plugins.delete(pluginName);
-                    console.log(`~ [PluginManager] 已移除插件: ${pluginName}`);
-                }
-            })
-            .on('error', error => {
-                console.error('~ [PluginManager] 文件监控错误:', error);
+        const initWatcher = () => {
+            watcher = chokidar.watch(pluginDir, {
+                ignored: [/(^|[\/\\])\../, /node_modules/],
+                persistent: true,
+                ignoreInitial: true,
+                awaitWriteFinish: {
+                    stabilityThreshold: 1000,
+                    pollInterval: 100
+                },
+                ignorePermissionErrors: true
             });
 
-        process.on('SIGINT', () => {
-            watcher.close();
-            console.log('~ [PluginManager] 已关闭插件监控');
-        });
+            const handlePluginChange = (filepath) => {
+                if (!filepath.endsWith('.js')) return;
+                
+                const pluginName = path.basename(filepath, '.js');
+                
+                // 防止重复加载
+                if (this._loadingPlugins.has(pluginName)) {
+                    console.log(`~ [PluginManager] 插件 ${pluginName} 正在加载中，跳过重复加载`);
+                    return;
+                }
+
+                this._loadingPlugins.add(pluginName);
+                
+                try {
+                    console.log(`~ [PluginManager] 正在重新加载插件: ${filepath}`);
+                    this.loadPlugin(filepath, app);
+                    console.log(`~ [PluginManager] 插件 ${pluginName} 重载成功`);
+                } catch (error) {
+                    console.error(`~ [PluginManager] 插件 ${pluginName} 重载失败:`, error);
+                    // 重载失败时清理相关状态
+                    this.removePluginRoutes(app, pluginName);
+                    this.plugins.delete(pluginName);
+                } finally {
+                    this._loadingPlugins.delete(pluginName);
+                }
+            };
+
+            watcher
+                .on('change', (filepath) => {
+                    this._debounce(filepath, () => handlePluginChange(filepath));
+                })
+                .on('add', (filepath) => {
+                    this._debounce(filepath, () => handlePluginChange(filepath));
+                })
+                .on('unlink', (filepath) => {
+                    if (filepath.endsWith('.js')) {
+                        const pluginName = path.basename(filepath, '.js');
+                        console.log(`~ [PluginManager] 检测到插件被删除: ${filepath}`);
+                        this.removePluginRoutes(app, pluginName);
+                        this.plugins.delete(pluginName);
+                        console.log(`~ [PluginManager] 已移除插件: ${pluginName}`);
+                    }
+                })
+                .on('error', error => {
+                    console.error('~ [PluginManager] 文件监控错误:', error);
+                });
+        };
+
+        initWatcher();
+
+        // 处理优雅退出
+        const handleExit = async () => {
+            if (watcher) {
+                console.log('~ [PluginManager] 正在关闭插件监控...');
+                await watcher.close();
+                watcher = null;
+                console.log('~ [PluginManager] 插件监控已关闭');
+            }
+            // 确保程序能够正常退出
+            process.exit(0);
+        };
+
+        // 监听多个退出信号
+        process.on('SIGINT', handleExit);
+        process.on('SIGTERM', handleExit);
+        process.on('SIGQUIT', handleExit);
 
         console.log('~ [PluginManager] 已启用插件热重载功能');
         return watcher;
