@@ -261,23 +261,24 @@ class PluginManager {
 
         initWatcher();
 
-        // 处理优雅退出
+        // 修改退出处理，添加退出标志，防止重复输出
+        let exitCalled = false;
         const handleExit = async () => {
+            if (exitCalled) return;
+            exitCalled = true;
             if (watcher) {
-                console.log('~ [PluginManager] 正在关闭插件监控...');
                 await watcher.close();
                 watcher = null;
-                console.log('~ [PluginManager] 插件监控已关闭');
+                console.log('-----Goodbye!-----');
             }
-            // 确保程序能够正常退出
             process.exit(0);
         };
 
-        // 监听多个退出信号
-        process.on('SIGINT', handleExit);
-        process.on('SIGTERM', handleExit);
-        process.on('SIGQUIT', handleExit);
-
+        // 使用 process.once 确保每个信号只注册一次
+        process.once('SIGINT', handleExit);
+        process.once('SIGTERM', handleExit);
+        process.once('SIGQUIT', handleExit);
+        
         console.log('~ [PluginManager] 已启用插件热重载功能');
         return watcher;
     }
