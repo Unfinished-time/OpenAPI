@@ -63,18 +63,20 @@ jobs:
           case "${{ matrix.os }}" in
             ubuntu-latest)
               PKG_EXT=tar.gz
+              PKG_NAME="OpenAPI_ubuntu.zip"
               START_CMD="echo '#!/bin/bash\n./node-v20.11.1-linux-x64/bin/node index.js' > start.sh && chmod +x start.sh"
               ;;
             windows-latest)
               PKG_EXT=zip
+              PKG_NAME="OpenAPI_windows.zip"
               START_CMD="echo @echo off > start.bat && echo node-v20.11.1-win-x64\\node.exe index.js >> start.bat"
               ;;
             macos-latest)
               PKG_EXT=tar.gz
+              PKG_NAME="OpenAPI_macos.zip"
               START_CMD="echo '#!/bin/bash\n./node-v20.11.1-darwin-x64/bin/node index.js' > start.sh && chmod +x start.sh"
               ;;
           esac
-          PKG_NAME="node_app_${{ matrix.os }}.${PKG_EXT}"
           mkdir package
           cp -r node_runtime/* package/
           # 只复制除 package 目录自身以外的内容
@@ -82,19 +84,15 @@ jobs:
           cp -r !("package"|"node_runtime") package/
           cd package
           eval $START_CMD
-          if [ "$PKG_EXT" = "zip" ]; then
-            zip -r ../$PKG_NAME .
-          else
-            tar -czf ../$PKG_NAME .
-          fi
+          zip -r ../$PKG_NAME .
           cd ..
         shell: bash
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: node_app_${{ matrix.os }}
-          path: node_app_${{ matrix.os }}.*
+          name: OpenAPI_${{ matrix.os }}
+          path: OpenAPI_*.zip
 
       - name: 检查是否为版本号提交
         id: version_commit
