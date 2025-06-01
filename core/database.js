@@ -7,7 +7,6 @@ const app = express();
 
 console.log("~ 探测数据库IP：" + _config.mysql.host);
 console.log("~ [数据库] 正在连接到数据库服务器：" + _config.mysql.host);
-
 let pool = null;
 
 function createPool() {
