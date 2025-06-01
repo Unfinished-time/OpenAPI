@@ -1,16 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-
 class PluginManager {
     constructor() {
-        this.plugins = new Map();
-        this.routes = new Map();
+        this.plugins=new Map();
+        this.routes=new Map();
         this._routeStacks = new Map();
         this._loadingPlugins = new Set(); // 添加加载状态追踪
-        this._debounceTimers = new Map(); // 添加防抖计时器存储
+        this._debounceTimers=new Map();
     }
-
     loadRoutes(pluginDir, app) {
         try {
             if (!fs.existsSync(pluginDir)) {
@@ -18,9 +16,7 @@ class PluginManager {
                 fs.mkdirSync(pluginDir, { recursive: true });
                 return;
             }
-
             const files = fs.readdirSync(pluginDir);
-            
             files.forEach(file => {
                 if (file.endsWith('.js')) {
                     const pluginPath = path.join(pluginDir, file);
@@ -173,7 +169,7 @@ class PluginManager {
     getPluginByPath(requestPath) {
         requestPath = requestPath.toLowerCase();
         if (!requestPath.startsWith('/')) {
-            requestPath = '/' + requestPath;
+            requestPath = '/' + requestPath;s
         }
 
         return Array.from(this.plugins.values()).find(plugin => {
