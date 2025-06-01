@@ -1,0 +1,110 @@
+name: 构建并发布 Node 应用
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'   # 只有推送形如 v1.2.3 的 tag 时才会触发发布
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    name: 构建并打包 (${{ matrix.os }})
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装依赖
+        run: npm install
+
+      - name: 下载 Node.js 运行时
+        run: |
+          NODE_VERSION=20.11.1
+          case "${{ matrix.os }}" in
+            ubuntu-latest)
+              OS=linux
+              EXT=tar.xz
+              ;;
+            windows-latest)
+              OS=win
+              EXT=zip
+              ;;
+            macos-latest)
+              OS=darwin
+              EXT=tar.xz
+              ;;
+          esac
+          ARCH=x64
+          NODE_DIST=node-v${NODE_VERSION}-${OS}-${ARCH}
+          NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/${NODE_DIST}.${EXT}"
+          mkdir -p node_runtime
+          cd node_runtime
+          curl -O -L $NODE_URL
+          if [ "$EXT" = "zip" ]; then
+            unzip ${NODE_DIST}.zip
+          else
+            tar -xf ${NODE_DIST}.tar.xz
+          fi
+          cd ..
+
+        shell: bash
+
+      - name: 打包应用及 Node.js 运行时
+        run: |
+          case "${{ matrix.os }}" in
+            ubuntu-latest)
+              PKG_EXT=tar.gz
+              START_CMD="echo '#!/bin/bash\n./node-v20.11.1-linux-x64/bin/node index.js' > start.sh && chmod +x start.sh"
+              ;;
+            windows-latest)
+              PKG_EXT=zip
+              START_CMD="echo @echo off > start.bat && echo node-v20.11.1-win-x64\\node.exe index.js >> start.bat"
+              ;;
+            macos-latest)
+              PKG_EXT=tar.gz
+              START_CMD="echo '#!/bin/bash\n./node-v20.11.1-darwin-x64/bin/node index.js' > start.sh && chmod +x start.sh"
+              ;;
+          esac
+          PKG_NAME="node_app_${{ matrix.os }}.${PKG_EXT}"
+          mkdir package
+          cp -r node_runtime/* package/
+          cp -r * package/
+          cd package
+          eval $START_CMD
+          if [ "$PKG_EXT" = "zip" ]; then
+            zip -r ../$PKG_NAME .
+          else
+            tar -czf ../$PKG_NAME .
+          fi
+          cd ..
+
+        shell: bash
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: node_app_${{ matrix.os }}
+          path: node_app_${{ matrix.os }}.*
+
+  release:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./artifacts/**/*.*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
