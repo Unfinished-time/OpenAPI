@@ -3,10 +3,12 @@ name: 构建并发布 Node 应用
 on:
   push:
     tags:
-      - 'v*.*.*'   # 只有推送形如 v1.2.3 的 tag 时才会触发发布
+      - 'v*.*.*'
+  workflow_dispatch:
 
 jobs:
   build-and-release:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -93,9 +95,24 @@ jobs:
           name: node_app_${{ matrix.os }}
           path: node_app_${{ matrix.os }}.*
 
+      - name: 检查是否为版本号提交
+        id: version_commit
+        run: |
+          if [[ "${{ github.event.head_commit.message }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "is_version_commit=true" >> $GITHUB_OUTPUT
+            echo "version=${{ github.event.head_commit.message }}" >> $GITHUB_OUTPUT
+          else
+            echo "is_version_commit=false" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
   release:
     needs: build-and-release
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      (needs.build-and-release.outputs.is_version_commit == 'true')
     steps:
       - name: 下载所有构建产物
         uses: actions/download-artifact@v4
@@ -106,5 +123,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ./artifacts/**/*.*
+          name: ${{ github.ref_name || needs.build-and-release.outputs.version }}
+          tag_name: ${{ github.ref_name || needs.build-and-release.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
