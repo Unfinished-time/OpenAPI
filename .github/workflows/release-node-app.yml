@@ -77,7 +77,9 @@ jobs:
           PKG_NAME="node_app_${{ matrix.os }}.${PKG_EXT}"
           mkdir package
           cp -r node_runtime/* package/
-          cp -r * package/
+          # 只复制除 package 目录自身以外的内容
+          shopt -s extglob
+          cp -r !("package"|"node_runtime") package/
           cd package
           eval $START_CMD
           if [ "$PKG_EXT" = "zip" ]; then
@@ -86,7 +88,6 @@ jobs:
             tar -czf ../$PKG_NAME .
           fi
           cd ..
-
         shell: bash
 
       - name: 上传构建产物
