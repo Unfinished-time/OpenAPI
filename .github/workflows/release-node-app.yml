@@ -57,7 +57,6 @@ jobs:
           cd ..
 
         shell: bash
-
       - name: 打包应用及 Node.js 运行时
         run: |
           case "${{ matrix.os }}" in
