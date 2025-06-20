@@ -68,7 +68,7 @@ jobs:
             windows-latest)
               PKG_EXT=zip
               PKG_NAME="OpenAPI_windows.zip"
-              printf "@echo off\r\nnode-v20.11.1-win-x64\\node.exe index.js" > start.bat
+              printf "@echo off\r\nnode-v20.11.1-win-x64\\\\node.exe index.js" > start.bat
               ;;
             macos-latest)
               PKG_EXT=tar.gz
