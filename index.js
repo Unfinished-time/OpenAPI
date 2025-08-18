@@ -6,12 +6,14 @@ const app = express();
 const ini = require('ini');
 const pluginManager = require('./core/pluginManager');
 const session = require('express-session');
+const { displayBanner } = require('./core/banner');
 const configPath = './config.ini';
 const PLUGIN_DIR = path.join(__dirname, 'apis');
 if (!fs.existsSync(configPath)) {
     console.log('未检测到配置文件，正在创建...');
     require('./core/gen_config');
 }
+displayBanner();
 const pluginWatcher = pluginManager.setupWatcher(PLUGIN_DIR, app);
 global._status = {
     isAvailable: true,
