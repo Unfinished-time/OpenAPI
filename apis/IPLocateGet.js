@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-// 重新组织插件信息
 router.plugin_info = {
     name: "IPLocateGet",
     version: "v2.1",
@@ -15,24 +14,20 @@ console.log(`+ 模块: ${router.plugin_info.name} - ${router.plugin_info.version
 console.log(`  描述: ${router.plugin_info.description}`);
 console.log(`  类型: ${router.plugin_info.category}`);
 
-// IP 地址归属地查询服务
+// IP 地址归属地
 const IP_API_URL = {
     ipv4: 'http://ip-api.com/json/', // 支持 IPv4
     ipv6: 'http://ip-api.com/json/'  // 支持 IPv6
 };
 
-// 判断 IP 地址类型 (IPv4 或 IPv6)
+// 判断 IP 地址类型 (v4或v6)
 function getIPType(ip) {
     if (/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip)) {
         return 'ipv4';
     } else if (/^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(ip)) {
         return 'ipv6';
-    } else {
-        return null;
-    }
+    } else return null;
 }
-
-// 重命名原来的getIPLocation为queryIPLocation以避免命名冲突
 async function queryIPLocation(ip) {
     try {
         const ipType = getIPType(ip);
@@ -56,8 +51,6 @@ async function queryIPLocation(ip) {
         throw error;
     }
 }
-
-// 创建路由处理器
 const getIPLocation = async (req, res) => {
     try {
         const ip = req.query.ip || req.ip;
@@ -77,7 +70,6 @@ const getIPLocation = async (req, res) => {
             org: location.org,
             as: location.as
         };
-
         console.log(`+ [${router.plugin_info.name}] 成功查询 IP 地址归属地: ${ip}`);
         res.json({
             code: 200,
@@ -92,8 +84,6 @@ const getIPLocation = async (req, res) => {
         });
     }
 };
-
-// 使用新的路由语法
 router.route('/getIPLocation')
     .get(getIPLocation);
 

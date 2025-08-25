@@ -10,13 +10,13 @@ const defaultConfig = {
         port: 3001,
         server_name: "My Server",
         debug: false,
-        copyright: 'Name'
+        copyright: 'xx Company'
     },
     mysql: {
         host: 'localhost',
         user: 'root',
-        password: 'password',
-        database: 'mydb'
+        password: 'OpenAPI12345',
+        database: 'OpenAPI'
     },
     admin: {
         username: 'admin',
