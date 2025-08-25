@@ -34,7 +34,6 @@ async function checkHttpAccess(url) {
 }
 
 // 检查 Ping
-// 突然想起来的，这个是用来解决windows下ping命令输出乱码的问题的，不然输出的中文会是乱码
 
 function checkPing(host) {
     return new Promise((resolve) => {
