@@ -11,8 +11,9 @@ class PluginManager {
     }
     loadRoutes(pluginDir, app) {
         try {
+            // console.log('~ [PluginManager] 正在从目录加载插件...'); 
             if (!fs.existsSync(pluginDir)) {
-                console.log('~ [PluginManager] 插件目录不存在，正在创建...');
+                console.log('~ [PluginManager] 插件目录不存在，正在创建...'); 
                 fs.mkdirSync(pluginDir, { recursive: true });
                 return;
             }
@@ -66,7 +67,7 @@ class PluginManager {
                         router.use('/', subRouter);
                         app.use('/', router);
                         this.routes.set(pluginName, subRouter);
-                        console.log(`~ [PluginManager] 已加载旧版插件: ${pluginName}`);
+                        console.log(`~ [PluginManager] 已加载插件: ${pluginName}`);
                     } else if (typeof plugin.route === 'function') {
                         const subRouter = express.Router();
                         try {
@@ -74,7 +75,7 @@ class PluginManager {
                             router.use('/', subRouter);
                             app.use('/', router);
                             this.routes.set(pluginName, subRouter);
-                            console.log(`~ [PluginManager] 已加载新版插件: ${pluginName}`);
+                            console.log(`~ [PluginManager] 已加载插件: ${pluginName}`);
                         } catch (err) {
                             throw new Error(`插件 ${pluginName} 的route方法执行失败: ${err.message}`);
                         }
@@ -263,9 +264,9 @@ class PluginManager {
             if (exitCalled) return;
             exitCalled = true;
             if (watcher) {
-                await watcher.close();
-                watcher = null;
                 console.log('-----Goodbye!-----');
+                await watcher.close();
+                watcher = null;                
             }
             process.exit(0);
         };
@@ -274,10 +275,10 @@ class PluginManager {
         process.once('SIGINT', handleExit);
         process.once('SIGTERM', handleExit);
         process.once('SIGQUIT', handleExit);
-        
         console.log('~ [PluginManager] 已启用插件热重载功能');
         return watcher;
     }
 }
 
+//道观（bushi
 module.exports = new PluginManager();

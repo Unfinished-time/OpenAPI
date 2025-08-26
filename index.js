@@ -1623,6 +1623,7 @@ app.use((req, res) => {
 });
 
 app.listen(port, () => {
+    console.log(`* OpenAPI 启动完成`);
     console.log(`* 服务运行在端口: ${port}`);
 });
 

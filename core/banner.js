@@ -20,9 +20,7 @@ function displayBanner() {
  \\____/ .___/\\___/_/ /_/_/  |_/_/   /___/   
      /_/                                     
     `;
-
     console.log(getRandomColor() + banner + colors.reset);
     console.log(`${colors.cyan}OpenAPI based on Nodejs${colors.reset}`);
 }
-
 module.exports = { displayBanner };
