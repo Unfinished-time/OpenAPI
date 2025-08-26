@@ -22,5 +22,6 @@ function displayBanner() {
     `;
     console.log(getRandomColor() + banner + colors.reset);
     console.log(`${colors.cyan}OpenAPI based on Nodejs${colors.reset}`);
+    console.log(`${colors.cyan}Branched from ZGIT-Network/OPENAPI-Next Core${colors.reset}`);
 }
 module.exports = { displayBanner };
