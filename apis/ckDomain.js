@@ -16,6 +16,8 @@ const plugin_info = {
 
 console.log(`+ 模块: ${plugin_info.name} - ${plugin_info.version} (作者: ${plugin_info.author}) 已载入`);
 
+/*/*?*\*/ 
+
 async function getDomainInfo(domain) {
     try {
         const dnsInfo = {
