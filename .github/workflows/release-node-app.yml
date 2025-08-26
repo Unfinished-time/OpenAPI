@@ -51,8 +51,10 @@ jobs:
           curl -O -L $NODE_URL
           if [ "$EXT" = "zip" ]; then
             unzip ${NODE_DIST}.zip
+            rm ${NODE_DIST}.zip
           else
             tar -xf ${NODE_DIST}.tar.xz
+            rm ${NODE_DIST}.tar.xz
           fi
           cd ..
 
@@ -78,7 +80,6 @@ jobs:
           esac
           mkdir package
           cp -r node_runtime/* package/
-          # 只复制除 package 目录自身以外的内容
           shopt -s extglob
           cp -r !("package"|"node_runtime") package/
           cd package
