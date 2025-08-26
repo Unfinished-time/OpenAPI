@@ -9,7 +9,7 @@ const whoisLookup = promisify(whois.lookup);
 const plugin_info = {
     "name": "网站信息查询",
     "version": "v1.0",
-    "author": "OpenAPI",
+    "author": "Zatursure",
     "description": "查询指定网站的域名、DNS、SSL证书等详细信息",
     "category": "工具"
 };
