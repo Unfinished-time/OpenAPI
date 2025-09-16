@@ -78,7 +78,7 @@ app.use(responseTimeLogger);
 app.use(morgan(format));
 app.use(express.static('public'));
 app.use(session({
-    secret: 'lNdzs91S5SxqPnuVYZGxN3lf6WVDI7g9lA6awUqnK5dJNprQgLHQXdRDJc3zGtcw',
+    secret: 'ChangeThisToYourOwnSecretKey',
     resave: false,
     saveUninitialized: true,
 }));
@@ -446,17 +446,16 @@ app.get('/', (req, res) => {
                         </div>
                     </div>
 
-                    <a href="https://github.com/zatursure/OpenAPI" class="github-link">
+                    <a href="https://github.com/Unfinished-time/OpenAPI/" class="github-link">
                         此项目已在Github开源
                     </a>
 
                     <footer>
                         <p>${_config.app.server_name}</p>
-                        <p>&copy; ${currentYear} ${_config.app.copyright} - 保留所有权利</p>
+                        <p>&copy; ${currentYear} ${_config.app.copyright} - All rights reserved.</p>
                     </footer>
                 </div>
                 <script>
-                    // 添加简单的交互动画
                     document.querySelectorAll('.feature-item').forEach(item => {
                         item.addEventListener('mouseenter', () => {
                             item.style.transform = 'translateY(-5px)';
@@ -1091,7 +1090,6 @@ app.get('/admin', authMiddleware, (req, res) => {
                 
                 <div class="main-content">
                     <div class="container">
-                        <!-- 添加公告管理卡片 -->
                         <div class="card">
                             <div class="card-header">
                                 <h2 style="margin:0">公告管理</h2>
@@ -1153,8 +1151,6 @@ app.get('/admin', authMiddleware, (req, res) => {
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 插件管理的那部分 -->
                         <div class="card">
                             <div class="card-header">
                                 <h2 style="margin:0">插件管理</h2>
@@ -1242,10 +1238,10 @@ app.get('/admin', authMiddleware, (req, res) => {
                         }, 5000);
                     }
 
-                    // 状态更新函数
+                    // 状态更新
                     async function updateStatus(state) {
                         const enableBtn = document.getElementById('enableBtn');
-                        const disableBtn = document.getElementById('disableBtn'); // aaa拼写错误
+                        const disableBtn = document.getElementById('disableBtn');
                         const loading = state ? 
                             document.getElementById('enableLoading') : 
                             document.getElementById('disableLoading');
@@ -1434,6 +1430,7 @@ app.get('/admin', authMiddleware, (req, res) => {
     `);
 });
 
+/*status control*/
 app.get('/status/:state', (req, res) => {
     if (!req.session.isLoggedIn) {
         return res.status(401).json({
